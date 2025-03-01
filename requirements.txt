@@ -1,0 +1,16 @@
+# Core dependencies
+torch>=2.0.0
+transformers>=4.30.0
+gradio>=3.50.0
+duckduckgo_search>=3.0.0
+accelerate>=0.26.0
+
+# Additional dependencies
+numpy>=1.24.0
+pandas>=2.0.0
+tqdm>=4.65.0
+requests>=2.31.0
+
+# Optional dependencies
+faiss-gpu>=1.7.0; platform_system != "Darwin"
+faiss-cpu>=1.7.0; platform_system == "Darwin"
