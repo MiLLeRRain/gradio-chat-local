@@ -12,7 +12,14 @@ RUN apt-get update && apt-get install -y \
     python3.10-dev \
     build-essential \
     git \
+    curl \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js for GitHub Copilot integration
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && node --version \
+    && npm --version
 
 # Set Python aliases
 RUN ln -sf /usr/bin/python3.10 /usr/bin/python3 && \
@@ -27,6 +34,8 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Copy application code (excluding models directory)
 COPY app.py .
+COPY copilot_proxy.py .
+COPY copilot_config.json .
 COPY requirements.txt .
 COPY start.sh .
 # Copy any other necessary files, but exclude models

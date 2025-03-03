@@ -12,6 +12,12 @@ if ! command -v docker-compose &> /dev/null; then
     exit 1
 fi
 
+# Check if Node.js is installed (required for GitHub Copilot Language Server)
+if ! command -v node &> /dev/null; then
+    echo "Warning: Node.js is not installed. GitHub Copilot integration may not work."
+    echo "Please install Node.js to use GitHub Copilot features."
+fi
+
 # Check if NVIDIA Docker runtime is available
 if ! docker info | grep -i nvidia > /dev/null; then
     echo "Warning: NVIDIA Docker runtime not detected. GPU acceleration may not work."

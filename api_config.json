@@ -1,0 +1,10 @@
+{
+  "api_models": ["deepseek v3", "r1"],
+  "api_keys": {
+    "deepseek": "your_deepseek_api_key"
+  },
+  "auth": {
+    "username": "admin",
+    "password": "password"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "port": 5000,
+  "proxy_port": 5001,
+  "server_path": "@github/copilot-language-server",
+  "timeout": 30
+}
