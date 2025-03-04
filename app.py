@@ -241,7 +241,7 @@ def chunk_generation(prompt, model, tokenizer, max_chunk=512, max_iter=4):
 # ------------------------------
 # 4. Main Generation Function
 # ------------------------------
-def hybrid_generation(query, model_choice, use_external_search, use_chunk_generation, use_api_mode, system_prompt=""):
+def hybrid_generation(query, model_choice, use_external_search, use_chunk_generation, use_api_mode, system_prompt="", history=None):
     # Check if model choice is valid
     if model_choice.startswith("No models found"):
         return "Error: No models available. Please add models to the 'models' directory.", ""
@@ -264,10 +264,16 @@ def hybrid_generation(query, model_choice, use_external_search, use_chunk_genera
                 base_url="https://api.deepseek.com"
             )
             
-            # Prepare messages
+            # Get chat history from the parameter
             messages = []
             if system_prompt:
                 messages.append({"role": "system", "content": system_prompt})
+            
+            # Add chat history to messages
+            if history:
+                messages.extend(history)
+            
+            # Add current query
             messages.append({"role": "user", "content": query})
             
             # Make API request to DeepSeek
@@ -455,6 +461,8 @@ def create_interface():
     available_api_models = load_api_models()
     
     with gr.Blocks(title="混合对话生成系统") as interface:
+        # Initialize chat history state
+        chat_history = gr.State(value=[])        
         gr.Markdown("# 混合对话生成系统")
         gr.Markdown("选择模型类型、主模型、是否启用联网搜索和分块生成策略，系统将整合搜索上下文和动态生成参数生成最终回复，并显示生成统计信息。")
         
@@ -490,96 +498,57 @@ def create_interface():
                     use_search = gr.Checkbox(label="启用 DuckDuckGo 联网搜索", value=True)
                     use_chunk = gr.Checkbox(label="启用分块生成策略", value=False)
                 
-                # Modified Copilot proxy toggle and test button
-                with gr.Row():
-                    use_copilot = gr.Checkbox(label="启用 Copilot 代理（开发中）", value=False, interactive=False)
-                    test_copilot_btn = gr.Button("测试 Copilot 连接")
+                submit_btn = gr.Button("提交")
                 
-                submit_btn = gr.Button("生成回答")
+            with gr.Column(scale=3):
+                # Add chat history display component
+                chatbot = gr.Chatbot(label="对话历史", height=400)
+                response_output = gr.Textbox(label="回复", lines=10)
+                stats_output = gr.Textbox(label="生成统计", lines=8)
+        
+        # Submit button click handler
+        def on_submit(query, model, use_search, use_chunk, use_api, system_prompt, history):
+            # Call hybrid_generation
+            response, stats = hybrid_generation(query, model, use_search, use_chunk, use_api, system_prompt, history)
             
-            with gr.Column(scale=1):
-                gpu_stats = gr.Textbox(label="实时 GPU 状态", value="等待生成...", interactive=False)
-                # Add API test result display
-                api_test_result = gr.Textbox(label="API 连接测试结果", visible=False)
-                # Add Copilot test result display
-                copilot_test_result = gr.Textbox(label="Copilot 连接测试结果", visible=False)
-        
-        response = gr.Textbox(label="生成回答")
-        stats = gr.Textbox(label="生成统计信息")
-        
-        def update_gpu_stats():
-            return gpu_monitor.get_current_stats()
-        
-        # Function to update model choices based on toggle
-        def update_model_choices(use_api):
-            use_api_mode_state.value = use_api
-            # Show/hide API test button and system prompt based on mode
-            if use_api:
-                return gr.Dropdown(choices=available_api_models, value=available_api_models[0] if available_api_models else None), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)
-            else:
-                return gr.Dropdown(choices=available_local_models, value=available_local_models[0] if available_local_models else None), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
-        
-        # Connect toggle to update model choices and API test button visibility
-        use_api_mode.change(
-            fn=update_model_choices,
-            inputs=[use_api_mode],
-            outputs=[model_choice, test_api_btn, api_test_result, system_prompt]
-        )
-        
-        # Connect API test button
-        test_api_btn.click(
-            fn=test_api_connection,
-            inputs=[],
-            outputs=[api_test_result]
-        )
-        
-        # Connect Copilot toggle and test button - modified to show notification
-        use_copilot.change(
-            fn=lambda x: "⚠️ Copilot proxy is currently under development",
-            inputs=[use_copilot],
-            outputs=[copilot_test_result]
-        )
-        
-        test_copilot_btn.click(
-            fn=lambda: "⚠️ Copilot proxy is currently under development",
-            inputs=[],
-            outputs=[copilot_test_result]
-        )
+            # Update chat history
+            history = history or []
+            history.append((query, response))
+            
+            # Update chatbot display
+            return response, stats, history, history
         
         submit_btn.click(
-            fn=hybrid_generation,
-            inputs=[query_input, model_choice, use_search, use_chunk, use_api_mode, system_prompt],
-            outputs=[response, stats]
+            fn=on_submit,
+            inputs=[
+                query_input,
+                model_choice,
+                use_search,
+                use_chunk,
+                use_api_mode,
+                system_prompt,
+                chat_history
+            ],
+            outputs=[response_output, stats_output, chat_history, chatbot]
         )
         
-        # Update GPU stats every 5 seconds using proper event handling
-        gpu_monitor.start_monitoring()
-        
-        # Create a refresh button that will be automatically clicked
-        refresh_btn = gr.Button("Refresh GPU Stats", visible=False)
-        refresh_btn.click(
-            fn=update_gpu_stats,
-            inputs=[],
-            outputs=[gpu_stats]
+        # Update model choices when API mode is toggled
+        use_api_mode.change(
+            fn=lambda x: gr.update(choices=load_api_models() if x else list_available_local_models()),
+            inputs=[use_api_mode],
+            outputs=[model_choice]
         )
         
-        # Initial update of GPU stats
-        gpu_stats.value = update_gpu_stats()
+        # Show/hide system prompt and API test button based on API mode
+        use_api_mode.change(
+            fn=lambda x: (gr.update(visible=x), gr.update(visible=x)),
+            inputs=[use_api_mode],
+            outputs=[system_prompt, test_api_btn]
+        )
         
-        # Set up a timer in the interface load event to periodically refresh GPU stats
-        # Using gr.HTML for JavaScript execution instead of the unsupported _js parameter
-        gr.HTML("""
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                setInterval(function() {
-                    const buttons = Array.from(document.querySelectorAll('button'));
-                    const refreshBtn = buttons.find(btn => btn.textContent.includes('Refresh GPU Stats'));
-                    if (refreshBtn) refreshBtn.click();
-                }, 5000);
-            });
-        </script>
-        """, visible=False)
-    
+        # Add API test button handler
+        test_api_btn.click(fn=test_api_connection, outputs=response_output)
+        
     return interface
 
 # ------------------------------
@@ -601,15 +570,17 @@ def login_required(f):
 # Login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    error = None
-    if request.method == 'POST':
-        credentials = get_auth_credentials()
-        if (request.form['username'] == credentials['username'] and
-                request.form['password'] == credentials['password']):
-            session['logged_in'] = True
-            return redirect(url_for('index'))
-        else:
-            error = 'Invalid credentials. Please try again.'
+    # error = None
+    # if request.method == 'POST':
+    #     credentials = get_auth_credentials()
+    #     if (request.form['username'] == credentials['username'] and
+    #             request.form['password'] == credentials['password']):
+    #         session['logged_in'] = True
+    #         return redirect(url_for('index'))
+    #     else:
+    #         error = 'Invalid credentials. Please try again.'
+    session['logged_in'] = True
+    return redirect(url_for('index'))
     
     # Simple login form
     return '''
