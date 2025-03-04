@@ -33,3 +33,4 @@ env/
 # System Files
 .DS_Store
 Thumbs.db
+api_config.json

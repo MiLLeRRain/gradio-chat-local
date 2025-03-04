@@ -58,13 +58,32 @@ class CopilotProxy:
             logger.info("Starting Copilot Language Server...")
             server_path = self.config.get('server_path', '@github/copilot-language-server')
             
+            # On Windows, we need to use shell=True for npm and npx commands
+            use_shell = os.name == 'nt'  # True on Windows
+            
+            # Check if the Copilot language server package is installed
+            try:
+                # Try to install the package if it's not already installed
+                install_cmd = "npm install -g " + server_path if use_shell else ["npm", "install", "-g", server_path]
+                logger.info(f"Installing Copilot language server: {install_cmd if use_shell else ' '.join(install_cmd)}")
+                subprocess.run(install_cmd, check=True, capture_output=True, text=True, shell=use_shell)
+                logger.info("Copilot language server installed successfully")
+            except subprocess.CalledProcessError as e:
+                logger.warning(f"Failed to install Copilot language server: {e.stderr}")
+                logger.info("Continuing with npx to run the server...")
+            except Exception as e:
+                logger.warning(f"Error during package installation: {str(e)}")
+                logger.info("Continuing with npx to run the server...")
+            
             # Start the server as a background process
-            cmd = ["npx", "--yes", server_path, "--port", str(self.config.get('port', 5000))]
+            cmd = "npx --yes " + server_path + " --port " + str(self.config.get('port', 5000)) if use_shell else ["npx", "--yes", server_path, "--port", str(self.config.get('port', 5000))]
+            logger.info(f"Running command: {cmd if use_shell else ' '.join(cmd)}")
             self.server_process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                text=True
+                text=True,
+                shell=use_shell
             )
             
             # Wait for server to start
@@ -78,6 +97,12 @@ class CopilotProxy:
                         return True
                 except requests.exceptions.RequestException:
                     time.sleep(1)
+                    
+                    # Check if process has terminated with error
+                    if self.server_process.poll() is not None:
+                        stderr_output = self.server_process.stderr.read()
+                        logger.error(f"Copilot server process terminated with error: {stderr_output}")
+                        return False
                     
             logger.error("Failed to start Copilot server within timeout")
             return False

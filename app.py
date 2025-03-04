@@ -4,10 +4,12 @@ import torch
 import gradio as gr
 import json
 import requests
+import openai
 from flask import Flask, request, redirect, session, url_for
 from functools import wraps
 from transformers import AutoModelForCausalLM, AutoTokenizer
 from duckduckgo_search import DDGS
+from copilot_proxy import CopilotProxy
 
 class GPUMonitor:
     def __init__(self):
@@ -79,13 +81,23 @@ os.makedirs(DATA_DIR, exist_ok=True)
 def load_api_config():
     try:
         if os.path.exists(API_CONFIG_PATH):
+            print("Loading API config...")
             with open(API_CONFIG_PATH, 'r') as f:
                 config = json.load(f)
                 return config
-        return {"api_models": [], "api_keys": {}, "auth": {"username": "admin", "password": "password"}}
+        print(f"API config not found at {API_CONFIG_PATH}. Creating default config...")
+        return {
+            "api_models": ["deepseek-chat", "deepseek-reasoner"],
+            "api_keys": {"deepseek": "your_deepseek_api_key"},
+            "auth": {"username": "admin", "password": "password"}
+        }
     except Exception as e:
         print(f"Error loading API config: {str(e)}")
-        return {"api_models": [], "api_keys": {}, "auth": {"username": "admin", "password": "password"}}
+        return {
+            "api_models": ["deepseek-chat", "deepseek-reasoner"],
+            "api_keys": {"deepseek": "your_deepseek_api_key"},
+            "auth": {"username": "admin", "password": "password"}
+        }
 
 # Function to load API model configuration
 def load_api_models():
@@ -95,6 +107,7 @@ def load_api_models():
 # Function to get API key
 def get_api_key(provider):
     config = load_api_config()
+    print(config)
     return config.get("api_keys", {}).get(provider, "")
 
 # Function to get authentication credentials
@@ -228,66 +241,71 @@ def chunk_generation(prompt, model, tokenizer, max_chunk=512, max_iter=4):
 # ------------------------------
 # 4. Main Generation Function
 # ------------------------------
-def hybrid_generation(query, model_choice, use_external_search, use_chunk_generation, use_api_mode):
+def hybrid_generation(query, model_choice, use_external_search, use_chunk_generation, use_api_mode, system_prompt=""):
     # Check if model choice is valid
     if model_choice.startswith("No models found"):
         return "Error: No models available. Please add models to the 'models' directory.", ""
     
     # Handle API model case
     if use_api_mode:
-        # Get API key for the provider (currently only supporting deepseek)
+        # Get API key for DeepSeek
         api_key = get_api_key("deepseek")
         if not api_key or api_key == "your_deepseek_api_key":
             return "Error: API key not configured. Please update the api_config.json file with your API key.", ""
         
         try:
-            # Simple implementation for Deepseek API integration
-            # This would need to be expanded based on the specific API requirements
-            headers = {
-                "Authorization": f"Bearer {api_key}",
-                "Content-Type": "application/json"
-            }
-            
-            payload = {
-                "model": model_choice,
-                "messages": [{"role": "user", "content": query}],
-                "temperature": 0.7,
-                "max_tokens": 800
-            }
-            
             # Start timing
             start_time = time.time()
             
-            # Make API request to Deepseek
-            response = requests.post(
-                "https://api.deepseek.com/v1/chat/completions",
-                headers=headers,
-                json=payload
+            # Setup for OpenAI-compatible API call to DeepSeek
+            import openai
+            client = openai.OpenAI(
+                api_key=api_key,
+                base_url="https://api.deepseek.com"
             )
             
-            if response.status_code == 200:
-                result = response.json()
-                reply = result.get("choices", [{}])[0].get("message", {}).get("content", "")
-                token_count = result.get("usage", {}).get("total_tokens", 0)
-                
-                # Calculate statistics
-                elapsed_time = time.time() - start_time
-                stats = (
-                    f"API 生成统计:\n"
-                    f"- Token 数量: {token_count}\n"
-                    f"- 生成耗时: {elapsed_time:.2f} 秒\n"
-                    f"- 模型: {model_choice}"
-                )
-                
-                return "最终回答：" + reply, stats
-            else:
-                error_msg = f"API Error: {response.status_code} - {response.text}"
-                return error_msg, ""
+            # Prepare messages
+            messages = []
+            if system_prompt:
+                messages.append({"role": "system", "content": system_prompt})
+            messages.append({"role": "user", "content": query})
+            
+            # Make API request to DeepSeek
+            print("\n[API Request to DeepSeek]")
+            print("Messages:")
+            print(json.dumps(messages, indent=2))
+            
+            response = client.chat.completions.create(
+                model=model_choice,
+                messages=messages,
+                temperature=0.7,
+                max_tokens=800,
+                stream=False
+            )
+            
+            print("\n[API Response from DeepSeek]")
+            print(json.dumps(response.model_dump(), indent=2))
+            
+            # Extract response content
+            reply = response.choices[0].message.content
+            token_count = response.usage.total_tokens
+            
+            # Calculate statistics
+            elapsed_time = time.time() - start_time
+            stats = (
+                f"API 生成统计:\n"
+                f"- 模型: {model_choice}\n"
+                f"- Token 数量: {token_count}\n"
+                f"- 生成耗时: {elapsed_time:.2f} 秒\n"
+                f"- 生成速度: {token_count/elapsed_time:.2f} tokens/second"
+            )
+            
+            return "最终回答：" + reply, stats
                 
         except Exception as e:
             error_msg = f"API Error: {str(e)}"
             return error_msg, ""
-    
+
     # Load selected model (using cache)
     if model_choice not in main_model_cache:
         model, tokenizer, error = load_main_model(model_choice, is_api_model=use_api_mode)
@@ -382,39 +400,54 @@ def test_api_connection(provider="deepseek"):
         return f"Error: {provider} API key not configured. Please update the api_config.json file with your API key."
     
     try:
-        # Simple ping to Deepseek API
-        headers = {
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json"
-        }
-        
-        # Minimal payload for testing connection
-        payload = {
-            "model": "deepseek-chat",  # Using a generic model name for testing
-            "messages": [{"role": "user", "content": "Hello"}],
-            "max_tokens": 5  # Minimal token generation to save costs
-        }
-        
-        # Make API request to Deepseek
-        response = requests.post(
-            "https://api.deepseek.com/v1/chat/completions",
-            headers=headers,
-            json=payload,
-            timeout=5  # Add timeout for better error handling
+        # Use OpenAI client with custom settings
+        client = openai.OpenAI(
+            api_key=api_key,
+            base_url="https://api.deepseek.com",
+            timeout=5.0,  # Set a reasonable timeout
+            max_retries=0  # Disable automatic retries
         )
         
-        if response.status_code == 200:
-            return f"✅ Successfully connected to {provider.capitalize()} API!"
-        else:
-            error_details = response.json() if response.text else "No error details available"
-            return f"❌ API Error: {response.status_code} - {error_details}"
+        # Prepare request payload
+        request_payload = {
+            "model": "deepseek-chat",
+            "messages": [{"role": "user", "content": "Hi"}],
+            "max_tokens": 1,
+            "timeout": 5.0,
+            "stream": False
+        }
+        print("\n[API Request Payload]")
+        print(json.dumps(request_payload, indent=2))
+        
+        # Record start time
+        start_time = time.time()
+        
+        # Make a minimal test request
+        response = client.chat.completions.create(**request_payload)
+        
+        # Calculate response time
+        response_time = time.time() - start_time
+        
+        # Log response details
+        print("\n[API Response]")
+        print(f"Response Time: {response_time:.2f} seconds")
+        print("Response Content:")
+        print(json.dumps(response.model_dump(), indent=2))
+        
+        return f"✅ Successfully connected to {provider.capitalize()} API! Available models include deepseek-chat (V3) and deepseek-reasoner (R1)."
             
-    except requests.exceptions.Timeout:
-        return f"❌ Connection timeout. The {provider.capitalize()} API server is not responding."
-    except requests.exceptions.ConnectionError:
-        return f"❌ Connection error. Please check your internet connection or if the {provider.capitalize()} API is down."
+    except openai.APITimeoutError:
+        return f"❌ Connection timeout: The {provider} API is taking too long to respond. Please try again."
     except Exception as e:
         return f"❌ Error testing API connection: {str(e)}"
+
+# Function to test Copilot proxy connection - replaced with notification
+def test_copilot_connection():
+    return "⚠️ Copilot proxy is currently under development"
+
+# Function to toggle Copilot proxy - replaced with notification
+def toggle_copilot_proxy(enable):
+    return "⚠️ Copilot proxy is currently under development", gr.update(visible=True)
 
 def create_interface():
     # Initialize with local models
@@ -445,15 +478,31 @@ def create_interface():
                     value=available_local_models[0] if available_local_models else None
                 )
                 
+                # Add system prompt for API models
+                system_prompt = gr.Textbox(
+                    lines=2, 
+                    placeholder="输入系统提示（可选，仅API模式有效）...",
+                    label="系统提示（System Prompt）",
+                    visible=False
+                )
+                
                 with gr.Row():
                     use_search = gr.Checkbox(label="启用 DuckDuckGo 联网搜索", value=True)
                     use_chunk = gr.Checkbox(label="启用分块生成策略", value=False)
+                
+                # Modified Copilot proxy toggle and test button
+                with gr.Row():
+                    use_copilot = gr.Checkbox(label="启用 Copilot 代理（开发中）", value=False, interactive=False)
+                    test_copilot_btn = gr.Button("测试 Copilot 连接")
+                
                 submit_btn = gr.Button("生成回答")
             
             with gr.Column(scale=1):
                 gpu_stats = gr.Textbox(label="实时 GPU 状态", value="等待生成...", interactive=False)
                 # Add API test result display
                 api_test_result = gr.Textbox(label="API 连接测试结果", visible=False)
+                # Add Copilot test result display
+                copilot_test_result = gr.Textbox(label="Copilot 连接测试结果", visible=False)
         
         response = gr.Textbox(label="生成回答")
         stats = gr.Textbox(label="生成统计信息")
@@ -464,17 +513,17 @@ def create_interface():
         # Function to update model choices based on toggle
         def update_model_choices(use_api):
             use_api_mode_state.value = use_api
-            # Show/hide API test button based on mode
+            # Show/hide API test button and system prompt based on mode
             if use_api:
-                return gr.Dropdown(choices=available_api_models, value=available_api_models[0] if available_api_models else None), gr.update(visible=True), gr.update(visible=True)
+                return gr.Dropdown(choices=available_api_models, value=available_api_models[0] if available_api_models else None), gr.update(visible=True), gr.update(visible=True), gr.update(visible=True)
             else:
-                return gr.Dropdown(choices=available_local_models, value=available_local_models[0] if available_local_models else None), gr.update(visible=False), gr.update(visible=False)
+                return gr.Dropdown(choices=available_local_models, value=available_local_models[0] if available_local_models else None), gr.update(visible=False), gr.update(visible=False), gr.update(visible=False)
         
         # Connect toggle to update model choices and API test button visibility
         use_api_mode.change(
             fn=update_model_choices,
             inputs=[use_api_mode],
-            outputs=[model_choice, test_api_btn, api_test_result]
+            outputs=[model_choice, test_api_btn, api_test_result, system_prompt]
         )
         
         # Connect API test button
@@ -484,13 +533,52 @@ def create_interface():
             outputs=[api_test_result]
         )
         
+        # Connect Copilot toggle and test button - modified to show notification
+        use_copilot.change(
+            fn=lambda x: "⚠️ Copilot proxy is currently under development",
+            inputs=[use_copilot],
+            outputs=[copilot_test_result]
+        )
+        
+        test_copilot_btn.click(
+            fn=lambda: "⚠️ Copilot proxy is currently under development",
+            inputs=[],
+            outputs=[copilot_test_result]
+        )
+        
         submit_btn.click(
             fn=hybrid_generation,
-            inputs=[query_input, model_choice, use_search, use_chunk, use_api_mode],
+            inputs=[query_input, model_choice, use_search, use_chunk, use_api_mode, system_prompt],
             outputs=[response, stats]
         )
         
-        gpu_stats.every(5, update_gpu_stats)  # Update GPU stats every 5 second    
+        # Update GPU stats every 5 seconds using proper event handling
+        gpu_monitor.start_monitoring()
+        
+        # Create a refresh button that will be automatically clicked
+        refresh_btn = gr.Button("Refresh GPU Stats", visible=False)
+        refresh_btn.click(
+            fn=update_gpu_stats,
+            inputs=[],
+            outputs=[gpu_stats]
+        )
+        
+        # Initial update of GPU stats
+        gpu_stats.value = update_gpu_stats()
+        
+        # Set up a timer in the interface load event to periodically refresh GPU stats
+        # Using gr.HTML for JavaScript execution instead of the unsupported _js parameter
+        gr.HTML("""
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                setInterval(function() {
+                    const buttons = Array.from(document.querySelectorAll('button'));
+                    const refreshBtn = buttons.find(btn => btn.textContent.includes('Refresh GPU Stats'));
+                    if (refreshBtn) refreshBtn.click();
+                }, 5000);
+            });
+        </script>
+        """, visible=False)
     
     return interface
 
@@ -587,15 +675,20 @@ if __name__ == "__main__":
     else:
         print("WARNING: CUDA not available. Running on CPU will be very slow.")
     
+    # Commented out: Initialize Copilot proxy (but don't start it yet)
+    # copilot_proxy = CopilotProxy()
+    
     # Create Gradio interface
     interface = create_interface()
     
-    # Mount Gradio app to Flask
-    app = gr.mount_gradio_app(app, interface, path="/gradio")
+    # Launch Gradio with authentication
+    credentials = get_auth_credentials()
+    auth = (credentials['username'], credentials['password'])
     
-    # Run Flask app
-    app.run(
-        host="0.0.0.0",
-        port=7860,
-        debug=False
+    # Launch the interface directly
+    interface.launch(
+        server_name="0.0.0.0",
+        server_port=7860,
+        auth=auth,
+        share=False
     )

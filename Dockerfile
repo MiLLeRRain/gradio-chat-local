@@ -1,5 +1,5 @@
 # Use NVIDIA CUDA base image
-FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04
+FROM pytorch/pytorch:2.0.1-cuda11.7-cudnn8-runtime
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive
@@ -7,9 +7,6 @@ ENV PYTHONUNBUFFERED=1
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3.10 \
-    python3-pip \
-    python3.10-dev \
     build-essential \
     git \
     curl \
@@ -42,7 +39,7 @@ COPY start.sh .
 COPY .gitignore .
 COPY docker-compose.yml .
 
-# Expose port for Gradio
+# Expose Gradio port
 EXPOSE 7860
 
 # Set default command

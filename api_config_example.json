@@ -1,0 +1,13 @@
+{
+    "api_models": [
+        "deepseek-chat",
+        "deepseek-reasoner"
+    ],
+    "api_keys": {
+        "deepseek": "your_deepseek_api_key"
+    },
+    "auth": {
+        "username": "admin",
+        "password": "password"
+    }
+}

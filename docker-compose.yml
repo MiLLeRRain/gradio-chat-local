@@ -7,11 +7,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - "7860:7860"
+      # - "5678:5678"  # VS Code debug port
     volumes:
+      - ./:/app 
       - ./models:/app/models
       - ./data:/app/data
     environment:
       - CUDA_VISIBLE_DEVICES=0
+      # - DEBUG_MODE=pycharm  # Set to 'vscode' or 'pycharm'
+      # - WAIT_FOR_DEBUGGER=false  # Set to 'true' to pause until debugger attaches
+      # - PYCHARM_DEBUG_HOST=host.docker.internal
+      # - PYCHARM_DEBUG_PORT=12345
     deploy:
       resources:
         reservations:
