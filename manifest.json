@@ -1,0 +1,16 @@
+{
+  "name": "混合对话生成系统",
+  "short_name": "AI聊天",
+  "description": "本地与API结合的混合大语言模型聊天应用",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f5f8ff",
+  "theme_color": "#6200ee",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ]
+}

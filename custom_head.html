@@ -1,0 +1,23 @@
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// This will ensure Three.js is loaded before our background script
+document.addEventListener('DOMContentLoaded', () => {
+    // Create a script element for our background
+    const script = document.createElement('script');
+    script.src = '/file=threejs_background.js';
+    document.head.appendChild(script);
+});
+</script>
+<style>
+/* Ensure proper layering for Three.js background */
+body {
+    position: relative;
+    z-index: 1;
+    background-color: transparent !important;
+}
+
+/* Remove default Gradio background */
+.gradio-container.dark {
+    background-color: transparent !important;
+}
+</style>

@@ -1,0 +1,347 @@
+/* 添加我们自己的自定义字体来避免404错误 */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --primary-color: #6200ee;
+  --primary-light: #a675ff;
+  --secondary-color: #03dac5;
+  --secondary-light: #66fff8;
+  --background-color: rgba(245, 248, 255, 0.6);
+  --card-background: rgba(255, 255, 255, 0.85);
+  --text-primary: #121212;
+  --text-secondary: #555555;
+  --success-color: #4caf50;
+  --warning-color: #ff9800;
+  --error-color: #f44336;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Global styling */
+body {
+  font-family: var(--font-primary) !important;
+  background-color: transparent;
+  color: var(--text-primary);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+h1, h2, h3 {
+  color: var(--primary-color);
+  text-shadow: 0px 0px 10px rgba(98, 0, 238, 0.2);
+}
+
+/* Gradio specific grayed-out styling */
+.disabled, .disabled > *, .disabled > .wrap > *,
+[data-testid="disabled"], [data-testid="disabled"] > *, [data-testid="disabled"] > .wrap > * {
+    opacity: 0.5 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    filter: grayscale(50%) !important;
+}
+
+/* Additional styling for input textbox */
+.input-textbox {
+    transition: all 0.3s ease;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 16px;
+}
+
+.input-textbox:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Custom styles for the chat application */
+
+/* Improve the appearance of the chatbot interface */
+.gradio-container {
+    max-width: 1200px !important;
+    margin: 20px auto !important;
+    position: relative !important;
+    z-index: 2 !important;
+    background-color: var(--background-color) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.18) !important;
+    padding: 20px !important;
+}
+
+/* Card styling */
+.gradio-container .prose, .gradio-container [class^="box"] {
+  border-radius: 16px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08) !important;
+  background-color: var(--card-background) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  transition: all 0.3s ease !important;
+}
+
+.gradio-container .prose:hover, .gradio-container [class^="box"]:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12) !important;
+}
+
+/* Input/output box styling */
+.gradio-container input, .gradio-container textarea {
+  border-radius: 12px !important;
+  border: 1px solid rgba(98, 0, 238, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  transition: all 0.3s ease !important;
+}
+
+.gradio-container input:focus, .gradio-container textarea:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.2) !important;
+  outline: none !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* Style the response output */
+.output-box {
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    padding: 10px;
+}
+
+/* Style buttons */
+button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+/* Button styling */
+.gradio-container button {
+  background: linear-gradient(135deg, var(--primary-color), #8b3dff) !important;
+  color: white !important;
+  border-radius: 12px !important;
+  padding: 10px 20px !important;
+  transition: all 0.3s ease !important;
+  font-weight: 600 !important;
+  border: none !important;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15), 0 0 10px rgba(98, 0, 238, 0.3) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  z-index: 1 !important;
+}
+
+.gradio-container button::before {
+  content: "" !important;
+  position: absolute !important;
+  top: -50% !important;
+  left: -50% !important;
+  width: 200% !important;
+  height: 200% !important;
+  background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 60%) !important;
+  transform: rotate(30deg) !important;
+  z-index: -1 !important;
+  transition: all 0.4s ease !important;
+}
+
+.gradio-container button:hover {
+  background: linear-gradient(135deg, #7d20ff, var(--primary-color)) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 7px 14px rgba(0, 0, 0, 0.18), 0 0 15px rgba(98, 0, 238, 0.4) !important;
+}
+
+.gradio-container button:hover::before {
+  top: -10% !important;
+  left: -10% !important;
+}
+
+/* Style checkboxes */
+input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Toggle buttons and checkboxes */
+.gradio-container [data-testid="checkbox"] span, 
+.gradio-container [data-testid="switch"] {
+  color: var(--primary-color) !important;
+}
+
+/* Dropdown styling */
+.gradio-container [data-testid="dropdown"] {
+  border-radius: 12px !important;
+  border: 1px solid rgba(98, 0, 238, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.gradio-container [data-testid="dropdown"]:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.2) !important;
+}
+
+/* Chatbot styling */
+.gradio-container [data-testid="chatbot"] {
+  border-radius: 16px !important;
+  border: 1px solid rgba(98, 0, 238, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+  overflow: hidden !important;
+  resize: vertical !important; /* Allow vertical resizing */
+  min-height: 400px !important;
+  max-height: 800px !important;
+  transition: height 0.3s ease !important;
+}
+
+/* Chatbot messages */
+.gradio-container [data-testid="chatbot"] [data-testid="bot"] {
+  background-color: rgba(98, 0, 238, 0.08) !important;
+  border-radius: 16px 16px 0 16px !important;
+  border-left: 3px solid var(--primary-color) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.gradio-container [data-testid="chatbot"] [data-testid="user"] {
+  background-color: rgba(3, 218, 197, 0.08) !important;
+  border-radius: 16px 16px 16px 0 !important;
+  border-right: 3px solid var(--secondary-color) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+/* Add resizing handle for chatbot */
+.gradio-container [data-testid="chatbot"]::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  cursor: ns-resize;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  opacity: 0.3;
+  transition: opacity 0.3s;
+}
+
+.gradio-container [data-testid="chatbot"]:hover::after {
+  opacity: 0.8;
+}
+
+/* Input textbox */
+.input-textbox {
+  border-radius: 12px !important;
+  border: 1px solid rgba(98, 0, 238, 0.2) !important;
+  padding: 14px !important;
+  font-size: 1.1em !important;
+  transition: all 0.3s ease !important;
+  background-color: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+  -webkit-backdrop-filter: blur(4px) !important;
+}
+
+.input-textbox:focus {
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.2) !important;
+  background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* App header */
+.gradio-container h1 {
+  font-size: 2.5rem;
+  text-align: center;
+  margin-bottom: 1rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding: 10px 0;
+}
+
+/* Add resizing handler */
+.resizable-vertical {
+  resize: vertical;
+  overflow: auto;
+  min-height: 100px;
+}
+
+/* Crystal shine effect for app header */
+@keyframes shine {
+  0% {
+    background-position: -100% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.app-header h1::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shine 6s infinite linear;
+}
+
+/* Fix Three.js canvas overlap issues */
+#background {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* Make sure canvas background is properly positioned */
+#background-canvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none; /* Allow clicking through the canvas */
+}
+
+/* 使用自定义字体替换系统字体，避免404错误 */
+* {
+  font-family: var(--font-primary) !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.gradio-container > * {
+  animation: fadeIn 0.5s ease-out forwards;
+}
