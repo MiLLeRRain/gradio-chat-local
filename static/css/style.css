@@ -1,4 +1,4 @@
-/* 添加我们自己的自定义字体来避免404错误 */
+/* 更加明确地使用Google Fonts避免404错误 */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -13,13 +13,14 @@
   --success-color: #4caf50;
   --warning-color: #ff9800;
   --error-color: #f44336;
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* 只定义Inter作为字体，不使用system-ui或ui-sans-serif */
+  --font-primary: 'Inter', Arial, sans-serif; 
 }
 
 /* Global styling */
 body {
   font-family: var(--font-primary) !important;
-  background-color: transparent;
+  background-color: transparent !important;
   color: var(--text-primary);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
@@ -203,9 +204,9 @@ input[type="checkbox"] {
   -webkit-backdrop-filter: blur(4px) !important;
   overflow: hidden !important;
   resize: vertical !important; /* Allow vertical resizing */
-  min-height: 400px !important;
-  max-height: 800px !important;
-  transition: height 0.3s ease !important;
+  min-height: 400px !重要;
+  max-height: 800px !重要;
+  transition: height 0.3s ease !重要;
 }
 
 /* Chatbot messages */
@@ -222,9 +223,9 @@ input[type="checkbox"] {
   background-color: rgba(3, 218, 197, 0.08) !important;
   border-radius: 16px 16px 16px 0 !important;
   border-right: 3px solid var(--secondary-color) !important;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !important;
-  backdrop-filter: blur(6px) !important;
-  -webkit-backdrop-filter: blur(6px) !important;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05) !重要;
+  backdrop-filter: blur(6px) !重要;
+  -webkit-backdrop-filter: blur(6px) !重要;
 }
 
 /* Add resizing handle for chatbot */
@@ -247,20 +248,20 @@ input[type="checkbox"] {
 
 /* Input textbox */
 .input-textbox {
-  border-radius: 12px !important;
-  border: 1px solid rgba(98, 0, 238, 0.2) !important;
-  padding: 14px !important;
-  font-size: 1.1em !important;
-  transition: all 0.3s ease !important;
-  background-color: rgba(255, 255, 255, 0.8) !important;
-  backdrop-filter: blur(4px) !important;
-  -webkit-backdrop-filter: blur(4px) !important;
+  border-radius: 12px !重要;
+  border: 1px solid rgba(98, 0, 238, 0.2) !重要;
+  padding: 14px !重要;
+  font-size: 1.1em !重要;
+  transition: all 0.3s ease !重要;
+  background-color: rgba(255, 255, 255, 0.8) !重要;
+  backdrop-filter: blur(4px) !重要;
+  -webkit-backdrop-filter: blur(4px) !重要;
 }
 
 .input-textbox:focus {
-  border-color: var(--primary-color) !important;
-  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.2) !important;
-  background-color: rgba(255, 255, 255, 0.95) !important;
+  border-color: var(--primary-color) !重要;
+  box-shadow: 0 0 0 3px rgba(98, 0, 238, 0.2) !重要;
+  background-color: rgba(255, 255, 255, 0.95) !重要;
 }
 
 /* App header */
@@ -333,7 +334,7 @@ input[type="checkbox"] {
 
 /* 使用自定义字体替换系统字体，避免404错误 */
 * {
-  font-family: var(--font-primary) !important;
+  font-family: var(--font-primary) !重要;
 }
 
 /* Animations */
@@ -344,4 +345,38 @@ input[type="checkbox"] {
 
 .gradio-container > * {
   animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* 设置选项卡样式 */
+.tabs.svelte-710cmy {
+  border-bottom: none !重要;
+  margin-bottom: 0 !重要;
+}
+
+/* 隐藏背景选项卡，但保持其内容可见 */
+#tab_background_tab {
+  /* 默认隐藏背景选项卡按钮，让脚本来控制它 */
+  display: none !重要;
+}
+
+/* 确保Three.js iframe在后台 */
+#threejs-container iframe {
+  position: fixed !重要;
+  top: 0 !重要;
+  left: 0 !重要;
+  width: 100vw !重要;
+  height: 100vh !重要;
+  z-index: -10 !重要;
+  border: none !重要;
+  pointer-events: none !重要; /* 确保点击事件通过 */
+}
+
+/* 确保聊天界面具有适当的玻璃态效果 */
+#chat-tab {
+  background-color: transparent !重要;
+}
+
+/* 为所有元素强制指定字体 */
+html, body, button, input, select, textarea, * {
+  font-family: var(--font-primary) !important;
 }

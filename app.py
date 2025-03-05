@@ -496,12 +496,16 @@ def on_submit(query, model, use_search, use_chunk, use_api, system_prompt, histo
     # Update chatbot display, clear input, and update GPU stats
     return "", response, stats, history, history, current_gpu_stats
 
+# 注释掉或移除这个函数，不再使用Three.js背景
+# def get_threejs_background():
+#     return """..."""
+
 def create_interface():
     # Initialize with local models
     available_local_models = list_available_local_models()
     available_api_models = load_api_models()
     
-    with gr.Blocks(title="混合对话生成系统", css="style.css", theme=gr.themes.Soft(
+    with gr.Blocks(title="混合对话生成系统", css="static/css/style.css", theme=gr.themes.Soft(
         primary_hue="indigo",
         secondary_hue="teal",
         neutral_hue="slate"
@@ -509,181 +513,13 @@ def create_interface():
         # Initialize chat history state with newer OpenAI-style message format
         chat_history = gr.State(value=[])
         
-        # Add Three.js background script directly embedded in HTML
+        # 添加404错误修复脚本
         gr.HTML("""
-        <canvas id="background-canvas" style="position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1;"></canvas>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r132/three.min.js"></script>
-        <script>
-        // Crystal background animation with Three.js - directly embedded
-        document.addEventListener('DOMContentLoaded', function() {
-            // Check if Three.js is loaded
-            if (typeof THREE === 'undefined') {
-                console.error('Three.js not loaded!');
-                return;
-            }
-            
-            console.log('Initializing Three.js background');
-            
-            // Setup scene
-            const canvas = document.getElementById('background-canvas');
-            if (!canvas) {
-                console.error('Canvas element not found!');
-                return;
-            }
-            
-            const scene = new THREE.Scene();
-            const clock = new THREE.Clock();
-            
-            // Set background color
-            scene.background = new THREE.Color(0xf5f8ff);
-            
-            // Camera setup
-            const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 0, 15);
-            camera.lookAt(0, 0, 0);
-            
-            // Renderer setup
-            const renderer = new THREE.WebGLRenderer({
-                canvas: canvas,
-                antialias: true,
-                alpha: true
-            });
-            renderer.setPixelRatio(window.devicePixelRatio);
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            
-            // Add lights
-            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
-            const spotLight1 = new THREE.SpotLight(0x6200ee, 1.5);
-            spotLight1.position.set(200, 100, 50);
-            const spotLight2 = new THREE.SpotLight(0x03dac5, 1.5);
-            spotLight2.position.set(-200, -100, -50);
-            
-            scene.add(ambientLight, spotLight1, spotLight2);
-            
-            // Color themes
-            const primaryColors = {
-                start: new THREE.Color(0x6200ee),
-                end: new THREE.Color(0xa675ff)
-            };
-            
-            const secondaryColors = {
-                start: new THREE.Color(0x03dac5),
-                end: new THREE.Color(0x66fff8)
-            };
-            
-            // Crystal objects container
-            const crystals = [];
-            
-            // Crystal factory function
-            function createCrystal(type) {
-                let geometry;
-                let colorPair;
-                let scale = THREE.MathUtils.randFloat(0.5, 1.5);
-                
-                if (type === 'diamond') {
-                    geometry = new THREE.OctahedronGeometry(1, 0);
-                    colorPair = primaryColors;
-                } else {
-                    geometry = new THREE.DodecahedronGeometry(1, 0);
-                    colorPair = secondaryColors;
-                }
-                
-                // Create material
-                const material = new THREE.MeshPhongMaterial({
-                    color: colorPair.start,
-                    specular: 0xffffff,
-                    shininess: 100,
-                    transparent: true,
-                    opacity: 0.8
-                });
-                
-                const crystal = new THREE.Mesh(geometry, material);
-                
-                // Randomize position
-                crystal.position.set(
-                    THREE.MathUtils.randFloatSpread(30),
-                    THREE.MathUtils.randFloatSpread(30),
-                    THREE.MathUtils.randFloatSpread(15)
-                );
-                
-                // Randomize rotation
-                crystal.rotation.set(
-                    Math.random() * Math.PI * 2,
-                    Math.random() * Math.PI * 2,
-                    Math.random() * Math.PI * 2
-                );
-                
-                // Randomize scale
-                crystal.scale.set(scale, scale, scale);
-                
-                // Store animation parameters
-                crystal.userData = {
-                    rotationSpeed: {
-                        x: THREE.MathUtils.randFloatSpread(0.005),
-                        y: THREE.MathUtils.randFloatSpread(0.005),
-                        z: THREE.MathUtils.randFloatSpread(0.005)
-                    },
-                    colorStart: colorPair.start.clone(),
-                    colorEnd: colorPair.end.clone(),
-                    floatOffset: Math.random() * Math.PI * 2,
-                    floatSpeed: THREE.MathUtils.randFloat(0.2, 0.6)
-                };
-                
-                scene.add(crystal);
-                return crystal;
-            }
-            
-            // Create 30 crystals
-            for (let i = 0; i < 15; i++) {
-                crystals.push(createCrystal('diamond'));
-                crystals.push(createCrystal('prism'));
-            }
-            
-            // Animation loop
-            function animate() {
-                requestAnimationFrame(animate);
-                
-                const time = clock.getElapsedTime();
-                
-                crystals.forEach(crystal => {
-                    // Rotate
-                    crystal.rotation.x += crystal.userData.rotationSpeed.x;
-                    crystal.rotation.y += crystal.userData.rotationSpeed.y;
-                    crystal.rotation.z += crystal.userData.rotationSpeed.z;
-                    
-                    // Float up and down
-                    const floatY = Math.sin(time * crystal.userData.floatSpeed + crystal.userData.floatOffset) * 0.2;
-                    crystal.position.y += floatY * 0.01;
-                    
-                    // Color pulse
-                    const colorPulse = (Math.sin(time * 0.5 + crystal.userData.floatOffset) + 1) * 0.5;
-                    crystal.material.color.copy(crystal.userData.colorStart).lerp(crystal.userData.colorEnd, colorPulse);
-                });
-                
-                // Camera slight motion
-                camera.position.x = Math.sin(time * 0.1) * 1.5;
-                camera.position.y = Math.cos(time * 0.1) * 1.5;
-                camera.lookAt(0, 0, 0);
-                
-                renderer.render(scene, camera);
-            }
-            
-            // Handle window resize
-            function onWindowResize() {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-            
-            window.addEventListener('resize', onWindowResize);
-            
-            // Start animation
-            animate();
-            console.log('Three.js background initialized');
-        });
-        </script>
+        <script src="file=static/js/fix_404_errors.js"></script>
+        <script src="file=static/js/custom.js"></script>
         """)
         
+        # 直接创建聊天界面，不使用Tabs布局
         # App header with animation
         with gr.Row():
             gr.Markdown("""
@@ -716,11 +552,10 @@ def create_interface():
                         value=False,
                         elem_classes=["toggle-button"]
                     )
-                    # Add API test button with improved styling
-                    test_api_btn = gr.Button(
-                        "🔄 测试 API 连接", 
-                        visible=False,
-                        elem_classes=["action-button"]
+                    # 移动提交按钮到这里 - 与复选框在同一行
+                    submit_btn = gr.Button(
+                        "🚀 提交",
+                        elem_classes=["submit-button"]
                     )
                 
                 # Model selection dropdown that updates based on toggle
@@ -752,10 +587,18 @@ def create_interface():
                         elem_classes=["feature-toggle"]
                     )
                 
-                # Create submit button with improved styling
-                submit_btn = gr.Button(
-                    "🚀 提交",
-                    elem_classes=["submit-button"]
+                # 注释掉或完全移除API测试按钮
+                # test_api_btn = gr.Button(
+                #     "🔄 测试 API 连接", 
+                #     visible=False,
+                #     elem_classes=["action-button"]
+                # )
+                
+                # 或者将其设置为始终不可见
+                test_api_btn = gr.Button(
+                    "🔄 测试 API 连接", 
+                    visible=False,  # 始终保持隐藏
+                    elem_classes=["action-button"]
                 )
                 
                 # Add GPU stats display with improved styling
@@ -786,7 +629,7 @@ def create_interface():
                     elem_classes=["stats-box"]
                 )
 
-        # Add custom JavaScript for resizable elements
+        # Add custom JavaScript for resizable elements - 保留此功能但不添加Three.js相关代码
         gr.HTML("""
         <script>
             document.addEventListener('DOMContentLoaded', () => {
@@ -837,13 +680,13 @@ def create_interface():
         
         # Show/hide system prompt, API test button, and response output based on API mode
         use_api_mode.change(
-            fn=lambda x: (gr.update(visible=x), gr.update(visible=x), gr.update(visible=not x)),
+            fn=lambda x: (gr.update(visible=x), gr.update(visible=False), gr.update(visible=not x)),  # 将测试按钮始终保持隐藏
             inputs=[use_api_mode],
             outputs=[system_prompt, test_api_btn, response_output]
         )
         
-        # Add API test button handler
-        test_api_btn.click(fn=test_api_connection, outputs=response_output)
+        # 保留API测试功能，但不绑定到界面上
+        # test_api_btn.click(fn=test_api_connection, outputs=response_output)
         
         # Bind the submit function to both the button and textbox
         submit_btn.click(

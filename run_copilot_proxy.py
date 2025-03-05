@@ -1,28 +1,23 @@
 import sys
 import os
 import time
+import argparse
 from copilot_proxy import CopilotProxy
 
 def main():
-    print("Starting Copilot Proxy Server...")
-    print("Press Ctrl+C to stop the server")
+    parser = argparse.ArgumentParser(description="Run the Copilot Proxy Server")
+    parser.add_argument('--host', type=str, default='0.0.0.0', help='Host address to bind to')
+    parser.add_argument('--port', type=int, default=5001, help='Port to run the proxy on')
+    parser.add_argument('--config', type=str, default='copilot_config.json', help='Path to config file')
     
-    # Initialize the proxy
-    proxy = CopilotProxy()
+    args = parser.parse_args()
     
+    proxy = CopilotProxy(config_path=args.config)
     try:
-        # Run the proxy server
-        proxy.run(host='127.0.0.1', port=5001)
+        proxy.run(host=args.host, port=args.port)
     except KeyboardInterrupt:
-        print("\nStopping Copilot Proxy Server...")
+        print("Shutting down Copilot Proxy Server...")
         proxy.stop()
-        print("Server stopped")
-    except Exception as e:
-        print(f"Error running Copilot Proxy: {str(e)}")
-        proxy.stop()
-        return 1
-    
-    return 0
 
 if __name__ == "__main__":
-    sys.exit(main())
+    main()

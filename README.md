@@ -19,6 +19,25 @@ A sophisticated chat application that combines local large language models with 
 - **NVIDIA Tools**: NVIDIA Container Toolkit (nvidia-docker)
 - **Storage**: At least 10GB for model storage (varies by model size)
 
+## 📁 Project Structure
+```
+/gradio-chat-local/
+├── app.py                     # 主应用文件
+├── README.md                  # 项目说明
+├── api_config.json            # API配置文件
+├── logger_config.py           # 日志配置模块
+├── static/                    # 静态资源文件夹
+│   ├── css/
+│   │   └── style.css          # CSS样式
+│   ├── js/
+│   │   ├── fix_404_errors.js  # 错误修复脚本
+│   │   └── custom.js          # 自定义增强脚本
+│   └── manifest.json          # 网站清单
+├── models/                    # 模型目录
+├── data/                      # 数据目录
+└── logs/                      # 日志目录
+```
+
 ## 🚀 Installation
 
 ### 1. Clone the Repository
