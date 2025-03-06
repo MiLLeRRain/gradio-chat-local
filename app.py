@@ -616,7 +616,8 @@ def create_interface():
                     height=500,
                     elem_classes=["resizable-chatbot"],
                     show_label=True,
-                    type="messages"  # Use the new format recommended by Gradio
+                    type="messages",  # Use the new format recommended by Gradio
+                    resizable=True
                 )
                 response_output = gr.Textbox(
                     label="🤖 AI 回复", 
